@@ -1,24 +1,112 @@
-import logo from './logo.svg';
-import './App.css';
+import React, {useState} from 'react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { Container, AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { Add, List, Notifications } from '@mui/icons-material';
+import VehicleList from './components/VehicleList';
+import VehicleForm from './components/VehicleForm';
+import ReminderList from './components/ReminderList';
+
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#1976d2',
+    },
+  },
+});
 
 function App() {
+const [formOpen, setFormOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [currentView, setCurrentView] = useState('vehicles'); // 'vehicles' or 'reminders'
+
+  const handleAddVehicle = () => {
+    setSelectedVehicle(null);
+    setFormOpen(true);
+  };
+
+  const handleEditVehicle = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setFormOpen(true);
+  };
+
+  const handleFormClose = () => {
+    setFormOpen(false);
+    setSelectedVehicle(null);
+  };
+
+  const handleFormSave = () => {
+    setRefreshKey(prev => prev + 1); // Liste neu laden
+  };
+
+  const showVehicles = () => {
+    setCurrentView('vehicles');
+  };
+
+  const showReminders = () => {
+    setCurrentView('reminders');
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Fuhrpark Management
+          </Typography>
+          <Button 
+            color="inherit" 
+            startIcon={<List />}
+            onClick={showVehicles}
+            variant={currentView === 'vehicles' ? 'outlined' : 'text'}
+          >
+            Fahrzeuge
+          </Button>
+          <Button 
+            color="inherit" 
+            startIcon={<Notifications />}
+            onClick={showReminders}
+            variant={currentView === 'reminders' ? 'outlined' : 'text'}
+          >
+            Erinnerungen
+          </Button>
+          <Button 
+            color="inherit" 
+            startIcon={<Add />}
+            onClick={handleAddVehicle}
+          >
+            Fahrzeug hinzufügen
+          </Button>
+        </Toolbar>
+      </AppBar>
+      
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        {currentView === 'vehicles' && (
+          <VehicleList 
+            key={refreshKey}
+            onEdit={handleEditVehicle}
+            onDelete={handleFormSave}
+          />
+        )}
+        {currentView === 'reminders' && (
+          <ReminderList 
+            key={refreshKey}
+            onEdit={() => {}} // TODO: Implement reminder editing
+            onDelete={handleFormSave}
+          />
+        )}
+      </Container>
+
+      <VehicleForm
+        open={formOpen}
+        onClose={handleFormClose}
+        vehicle={selectedVehicle}
+        onSave={handleFormSave}
+      />
+    </ThemeProvider>
   );
 }
 
