@@ -11,7 +11,8 @@ import {
     Chip,
     IconButton,
     Typography,
-    Box
+    Box,
+    TableSortLabel
 } from '@mui/material';
 import { Edit, Delete, Warning } from '@mui/icons-material';
 import { vehicleService } from '../services/vehicleService';
@@ -20,14 +21,18 @@ import dayjs from 'dayjs';
 const VehicleList = ({ onEdit, onDelete }) => {
     const [vehicles, setVehicles] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [sortConfig, setSortConfig] = useState({
+        key: 'licensePlate',
+        direction: 'asc'
+    });
 
     useEffect(() => {
         loadVehicles();
-    }, []);
+    }, [sortConfig]);
 
     const loadVehicles = async () => {
         try {
-            const response = await vehicleService.getAllVehicles();
+            const response = await vehicleService.getAllVehicles(sortConfig.key, sortConfig.direction);
             setVehicles(response.data);
         } catch (error) {
             console.error('Fehler beim Laden der Fahrzeuge:', error);
@@ -46,6 +51,14 @@ const VehicleList = ({ onEdit, onDelete }) => {
                 console.error('Fehler beim Löschen:', error);
             }
         }
+    };
+
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
     };
 
     const getLeaseStatusChip = (leaseEndDate) => {
@@ -78,12 +91,60 @@ const VehicleList = ({ onEdit, onDelete }) => {
                 <Table>
                     <TableHead>
                         <TableRow>
-                            <TableCell>Kennzeichen</TableCell>
-                            <TableCell>Marke</TableCell>
-                            <TableCell>Modell</TableCell>
-                            <TableCell>Baujahr</TableCell>
-                            <TableCell>Fahrer</TableCell>
-                            <TableCell>Leasing Ende</TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'licensePlate'}
+                                    direction={sortConfig.key === 'licensePlate' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('licensePlate')}
+                                >
+                                    Kennzeichen
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'brand'}
+                                    direction={sortConfig.key === 'brand' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('brand')}
+                                >
+                                    Marke
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'model'}
+                                    direction={sortConfig.key === 'model' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('model')}
+                                >
+                                    Modell
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'year'}
+                                    direction={sortConfig.key === 'year' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('year')}
+                                >
+                                    Baujahr
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'driverName'}
+                                    direction={sortConfig.key === 'driverName' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('driverName')}
+                                >
+                                    Fahrer
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'leaseEndDate'}
+                                    direction={sortConfig.key === 'leaseEndDate' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('leaseEndDate')}
+                                >
+                                    Leasing Ende
+                                </TableSortLabel>
+                            </TableCell>
                             <TableCell>Status</TableCell>
                             <TableCell>Aktionen</TableCell>
                         </TableRow>

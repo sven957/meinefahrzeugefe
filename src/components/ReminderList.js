@@ -11,7 +11,8 @@ import {
     Chip,
     IconButton,
     Typography,
-    Box
+    Box,
+    TableSortLabel
 } from '@mui/material';
 import { Edit, Delete, Warning, CheckCircle, Schedule } from '@mui/icons-material';
 import { reminderService } from '../services/reminderService';
@@ -35,14 +36,18 @@ const REMINDER_STATUS_LABELS = {
 const ReminderList = ({ onEdit, onDelete }) => {
     const [reminders, setReminders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [sortConfig, setSortConfig] = useState({
+        key: 'dueDate',
+        direction: 'asc'
+    });
 
     useEffect(() => {
         loadReminders();
-    }, []);
+    }, [sortConfig]);
 
     const loadReminders = async () => {
         try {
-            const response = await reminderService.getAllReminders();
+            const response = await reminderService.getAllReminders(sortConfig.key, sortConfig.direction);
             console.log('API Response:', response); // Debug log
             // Handle different response formats
             const reminderData = response.data || response || [];
@@ -82,6 +87,14 @@ const ReminderList = ({ onEdit, onDelete }) => {
         }
     };
 
+    const handleSort = (key) => {
+        let direction = 'asc';
+        if (sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
 
     if (loading) {
         return <Typography>Lade Erinnerungen...</Typography>;
@@ -97,11 +110,43 @@ const ReminderList = ({ onEdit, onDelete }) => {
                     <TableHead>
                         <TableRow>
                             <TableCell>Fahrzeug</TableCell>
-                            <TableCell>Titel</TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'title'}
+                                    direction={sortConfig.key === 'title' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('title')}
+                                >
+                                    Titel
+                                </TableSortLabel>
+                            </TableCell>
                             <TableCell>Beschreibung</TableCell>
-                            <TableCell>Fälligkeitsdatum</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Typ</TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'dueDate'}
+                                    direction={sortConfig.key === 'dueDate' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('dueDate')}
+                                >
+                                    Fälligkeitsdatum
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'status'}
+                                    direction={sortConfig.key === 'status' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('status')}
+                                >
+                                    Status
+                                </TableSortLabel>
+                            </TableCell>
+                            <TableCell>
+                                <TableSortLabel
+                                    active={sortConfig.key === 'type'}
+                                    direction={sortConfig.key === 'type' ? sortConfig.direction : 'asc'}
+                                    onClick={() => handleSort('type')}
+                                >
+                                    Typ
+                                </TableSortLabel>
+                            </TableCell>
                             <TableCell>Aktionen</TableCell>
                         </TableRow>
                     </TableHead>

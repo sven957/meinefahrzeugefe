@@ -1,12 +1,28 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Container, AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { Add, List, Notifications } from '@mui/icons-material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Tabs,
+  Tab,
+  Container,
+  IconButton,
+  Menu,
+  MenuItem,
+  Avatar,
+  Button
+} from '@mui/material';
+import { AccountCircle, DirectionsCar, Notifications, Dashboard as DashboardIcon } from '@mui/icons-material';
+import Login from './components/Login';
+import Register from './components/Register';
 import VehicleList from './components/VehicleList';
 import VehicleForm from './components/VehicleForm';
 import ReminderList from './components/ReminderList';
 import ReminderForm from './components/ReminderForm';
+import { authService } from './services/authService';
 
 const theme = createTheme({
   palette: {
@@ -17,27 +33,112 @@ const theme = createTheme({
   },
 });
 
-function App() {
-const [formOpen, setFormOpen] = useState(false);
-  const [reminderFormOpen, setReminderFormOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState(null);
-  const [selectedReminder, setSelectedReminder] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [currentView, setCurrentView] = useState('vehicles'); // 'vehicles' or 'reminders'
+function TabPanel({ children, value, index, ...other }) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ p: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
 
-  const handleAddVehicle = () => {
-    setSelectedVehicle(null);
-    setFormOpen(true);
+function App() {
+  const [showRegister, setShowRegister] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
+  const [currentTab, setCurrentTab] = useState(0);
+  const [anchorEl, setAnchorEl] = useState(null);
+  
+  // Vehicle Management State
+  const [vehicleFormOpen, setVehicleFormOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [vehicleListKey, setVehicleListKey] = useState(0);
+  
+  // Reminder Management State
+  const [reminderFormOpen, setReminderFormOpen] = useState(false);
+  const [selectedReminder, setSelectedReminder] = useState(null);
+  const [reminderListKey, setReminderListKey] = useState(0);
+
+  const handleLogin = (response) => {
+    setIsAuthenticated(true);
+    setUser({
+      username: response.username,
+      email: response.email,
+      firstName: response.firstName,
+      lastName: response.lastName,
+      role: response.role
+    });
   };
 
-  const handleAddReminder = () => {
-    setSelectedReminder(null);
-    setReminderFormOpen(true);
+  const handleRegister = (response) => {
+    setIsAuthenticated(true);
+    setUser({
+      username: response.username,
+      email: response.email,
+      firstName: response.firstName,
+      lastName: response.lastName,
+      role: response.role
+    });
+  };
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    setIsAuthenticated(false);
+    setUser(null);
+    setCurrentTab(0);
+    setAnchorEl(null);
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
+  };
+
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Vehicle Management Functions
+  const handleAddVehicle = () => {
+    setSelectedVehicle(null);
+    setVehicleFormOpen(true);
   };
 
   const handleEditVehicle = (vehicle) => {
     setSelectedVehicle(vehicle);
-    setFormOpen(true);
+    setVehicleFormOpen(true);
+  };
+
+  const handleVehicleSave = () => {
+    setVehicleListKey(prev => prev + 1);
+    setVehicleFormOpen(false);
+    setSelectedVehicle(null);
+  };
+
+  const handleVehicleDelete = () => {
+    setVehicleListKey(prev => prev + 1);
+  };
+
+  // Reminder Management Functions
+  const handleAddReminder = () => {
+    setSelectedReminder(null);
+    setReminderFormOpen(true);
   };
 
   const handleEditReminder = (reminder) => {
@@ -45,92 +146,146 @@ const [formOpen, setFormOpen] = useState(false);
     setReminderFormOpen(true);
   };
 
-  const handleFormClose = () => {
-    setFormOpen(false);
-    setSelectedVehicle(null);
-  };
-
-  const handleReminderFormClose = () => {
+  const handleReminderSave = () => {
+    setReminderListKey(prev => prev + 1);
     setReminderFormOpen(false);
     setSelectedReminder(null);
   };
 
-  const handleFormSave = () => {
-    setRefreshKey(prev => prev + 1); // Liste neu laden
+  const handleReminderDelete = () => {
+    setReminderListKey(prev => prev + 1);
   };
 
-  const showVehicles = () => {
-    setCurrentView('vehicles');
-  };
-
-  const showReminders = () => {
-    setCurrentView('reminders');
-  };
+  if (!isAuthenticated) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        {showRegister ? (
+          <Register
+            onRegister={handleRegister}
+            onSwitchToLogin={() => setShowRegister(false)}
+          />
+        ) : (
+          <Login
+            onLogin={handleLogin}
+            onSwitchToRegister={() => setShowRegister(true)}
+          />
+        )}
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Fuhrpark Management
-          </Typography>
-          <Button 
-            color="inherit" 
-            startIcon={<List />}
-            onClick={showVehicles}
-            variant={currentView === 'vehicles' ? 'outlined' : 'text'}
-          >
-            Fahrzeuge
-          </Button>
-          <Button 
-            color="inherit" 
-            startIcon={<Notifications />}
-            onClick={showReminders}
-            variant={currentView === 'reminders' ? 'outlined' : 'text'}
-          >
-            Erinnerungen
-          </Button>
-          <Button 
-            color="inherit" 
-            startIcon={<Add />}
-            onClick={currentView === 'vehicles' ? handleAddVehicle : handleAddReminder}
-          >
-            {currentView === 'vehicles' ? 'Fahrzeug hinzufügen' : 'Erinnerung hinzufügen'}
-          </Button>
-        </Toolbar>
-      </AppBar>
-      
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        {currentView === 'vehicles' && (
-          <VehicleList 
-            key={refreshKey}
-            onEdit={handleEditVehicle}
-            onDelete={handleFormSave}
-          />
-        )}
-        {currentView === 'reminders' && (
-          <ReminderList 
-            key={refreshKey}
-            onEdit={handleEditReminder}
-            onDelete={handleFormSave}
-          />
-        )}
-      </Container>
+      <Box sx={{ flexGrow: 1 }}>
+        <AppBar position="static">
+          <Toolbar>
+            <DirectionsCar sx={{ mr: 2 }} />
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+              Fuhrpark Management System
+            </Typography>
+            <Typography variant="body1" sx={{ mr: 2 }}>
+              Willkommen, {user?.firstName} {user?.lastName}
+            </Typography>
+            <IconButton
+              size="large"
+              onClick={handleMenuOpen}
+              color="inherit"
+            >
+              <AccountCircle />
+            </IconButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+            >
+              <MenuItem onClick={handleLogout}>Abmelden</MenuItem>
+            </Menu>
+          </Toolbar>
+        </AppBar>
 
-      <VehicleForm
-        open={formOpen}
-        onClose={handleFormClose}
-        vehicle={selectedVehicle}
-        onSave={handleFormSave}
-      />
+        <Container maxWidth="lg">
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2 }}>
+            <Tabs value={currentTab} onChange={handleTabChange}>
+              <Tab icon={<DashboardIcon />} label="Dashboard" />
+              <Tab icon={<DirectionsCar />} label="Fahrzeuge" />
+              <Tab icon={<Notifications />} label="Erinnerungen" />
+            </Tabs>
+          </Box>
 
-      <ReminderForm
-        open={reminderFormOpen}
-        onClose={handleReminderFormClose}
-        reminder={selectedReminder}
-        onSave={handleFormSave}
-      />
+          <TabPanel value={currentTab} index={0}>
+            <Typography variant="h4" gutterBottom>
+              Dashboard
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Hier finden Sie eine Übersicht über Ihre Fahrzeuge und anstehende Aufgaben.
+            </Typography>
+            <Box sx={{ mt: 3, display: 'grid', gap: 2 }}>
+              <Typography variant="h6">Willkommen im Fuhrpark Management System!</Typography>
+              <Typography variant="body2">
+                Verwenden Sie die Registerkarten oben, um zwischen Fahrzeugen und Erinnerungen zu navigieren.
+              </Typography>
+            </Box>
+          </TabPanel>
+
+          <TabPanel value={currentTab} index={1}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h4" gutterBottom>
+                Fahrzeuge
+              </Typography>
+              <Button 
+                variant="contained" 
+                onClick={handleAddVehicle}
+                startIcon={<DirectionsCar />}
+              >
+                Fahrzeug hinzufügen
+              </Button>
+            </Box>
+            <VehicleList
+              key={vehicleListKey}
+              onEdit={handleEditVehicle}
+              onDelete={handleVehicleDelete}
+            />
+          </TabPanel>
+
+          <TabPanel value={currentTab} index={2}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h4" gutterBottom>
+                Erinnerungen
+              </Typography>
+              <Button 
+                variant="contained" 
+                onClick={handleAddReminder}
+                startIcon={<Notifications />}
+              >
+                Erinnerung hinzufügen
+              </Button>
+            </Box>
+            <ReminderList
+              key={reminderListKey}
+              onEdit={handleEditReminder}
+              onDelete={handleReminderDelete}
+            />
+          </TabPanel>
+        </Container>
+
+        {/* Vehicle Form Dialog */}
+        <VehicleForm
+          open={vehicleFormOpen}
+          onClose={() => setVehicleFormOpen(false)}
+          vehicle={selectedVehicle}
+          onSave={handleVehicleSave}
+        />
+
+        {/* Reminder Form Dialog */}
+        <ReminderForm
+          open={reminderFormOpen}
+          onClose={() => setReminderFormOpen(false)}
+          reminder={selectedReminder}
+          onSave={handleReminderSave}
+        />
+      </Box>
     </ThemeProvider>
   );
 }
