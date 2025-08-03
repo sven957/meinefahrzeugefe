@@ -6,6 +6,7 @@ import { Add, List, Notifications } from '@mui/icons-material';
 import VehicleList from './components/VehicleList';
 import VehicleForm from './components/VehicleForm';
 import ReminderList from './components/ReminderList';
+import ReminderForm from './components/ReminderForm';
 
 const theme = createTheme({
   palette: {
@@ -18,7 +19,9 @@ const theme = createTheme({
 
 function App() {
 const [formOpen, setFormOpen] = useState(false);
+  const [reminderFormOpen, setReminderFormOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [selectedReminder, setSelectedReminder] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentView, setCurrentView] = useState('vehicles'); // 'vehicles' or 'reminders'
 
@@ -27,14 +30,29 @@ const [formOpen, setFormOpen] = useState(false);
     setFormOpen(true);
   };
 
+  const handleAddReminder = () => {
+    setSelectedReminder(null);
+    setReminderFormOpen(true);
+  };
+
   const handleEditVehicle = (vehicle) => {
     setSelectedVehicle(vehicle);
     setFormOpen(true);
   };
 
+  const handleEditReminder = (reminder) => {
+    setSelectedReminder(reminder);
+    setReminderFormOpen(true);
+  };
+
   const handleFormClose = () => {
     setFormOpen(false);
     setSelectedVehicle(null);
+  };
+
+  const handleReminderFormClose = () => {
+    setReminderFormOpen(false);
+    setSelectedReminder(null);
   };
 
   const handleFormSave = () => {
@@ -76,9 +94,9 @@ const [formOpen, setFormOpen] = useState(false);
           <Button 
             color="inherit" 
             startIcon={<Add />}
-            onClick={handleAddVehicle}
+            onClick={currentView === 'vehicles' ? handleAddVehicle : handleAddReminder}
           >
-            Fahrzeug hinzufügen
+            {currentView === 'vehicles' ? 'Fahrzeug hinzufügen' : 'Erinnerung hinzufügen'}
           </Button>
         </Toolbar>
       </AppBar>
@@ -94,7 +112,7 @@ const [formOpen, setFormOpen] = useState(false);
         {currentView === 'reminders' && (
           <ReminderList 
             key={refreshKey}
-            onEdit={() => {}} // TODO: Implement reminder editing
+            onEdit={handleEditReminder}
             onDelete={handleFormSave}
           />
         )}
@@ -104,6 +122,13 @@ const [formOpen, setFormOpen] = useState(false);
         open={formOpen}
         onClose={handleFormClose}
         vehicle={selectedVehicle}
+        onSave={handleFormSave}
+      />
+
+      <ReminderForm
+        open={reminderFormOpen}
+        onClose={handleReminderFormClose}
+        reminder={selectedReminder}
         onSave={handleFormSave}
       />
     </ThemeProvider>

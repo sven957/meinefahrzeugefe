@@ -13,9 +13,24 @@ import {
     Typography,
     Box
 } from '@mui/material';
-import { Edit, Delete, Warning } from '@mui/icons-material';
+import { Edit, Delete, Warning, CheckCircle, Schedule } from '@mui/icons-material';
 import { reminderService } from '../services/reminderService';
 import dayjs from 'dayjs';
+
+const REMINDER_TYPE_LABELS = {
+    'LEASE_END': 'Leasingrückgabe',
+    'LICENSE_CHECK': 'Führerscheinüberprüfung',
+    'TUV': 'TÜV/HU',
+    'INSURANCE': 'Versicherung',
+    'MAINTENANCE': 'Wartung',
+    'OTHER': 'Sonstiges'
+};
+
+const REMINDER_STATUS_LABELS = {
+    'PENDING': 'Offen',
+    'COMPLETED': 'Erledigt',
+    'OVERDUE': 'Überfällig'
+};
 
 const ReminderList = ({ onEdit, onDelete }) => {
     const [reminders, setReminders] = useState([]);
@@ -49,6 +64,21 @@ const ReminderList = ({ onEdit, onDelete }) => {
             } catch (error) {
                 console.error('Fehler beim Löschen:', error);
             }
+        }
+    };
+
+    const handleStatusChange = async (id, newStatus) => {
+        try {
+            if (newStatus === 'COMPLETED') {
+                await reminderService.markAsCompleted(id);
+            } else if (newStatus === 'PENDING') {
+                await reminderService.markAsPending(id);
+            } else {
+                await reminderService.updateReminderStatus(id, `"${newStatus}"`);
+            }
+            loadReminders(); // Liste neu laden
+        } catch (error) {
+            console.error('Fehler beim Aktualisieren des Status:', error);
         }
     };
 
@@ -87,26 +117,51 @@ const ReminderList = ({ onEdit, onDelete }) => {
                                         {reminder.status === 'OVERDUE' ? (
                                             <Chip
                                                 icon={<Warning />}
-                                                label="Überfällig"
+                                                label={REMINDER_STATUS_LABELS[reminder.status] || reminder.status}
                                                 color="error"
+                                                size="small"
+                                                sx={{ mr: 1 }}
+                                            />
+                                        ) : reminder.status === 'COMPLETED' ? (
+                                            <Chip
+                                                label={REMINDER_STATUS_LABELS[reminder.status] || reminder.status}
+                                                color="success"
                                                 size="small"
                                                 sx={{ mr: 1 }}
                                             />
                                         ) : (
                                             <Chip
-                                                label={reminder.status}
+                                                label={REMINDER_STATUS_LABELS[reminder.status] || reminder.status}
                                                 color="default"
                                                 size="small"
                                                 sx={{ mr: 1 }}
                                             />
                                         )}
                                     </TableCell>
-                                    <TableCell>{reminder.type}</TableCell>
+                                    <TableCell>{REMINDER_TYPE_LABELS[reminder.type] || reminder.type}</TableCell>
                                     <TableCell>
-                                        <IconButton onClick={() => onEdit(reminder)}>
+                                        <IconButton onClick={() => onEdit(reminder)} title="Bearbeiten">
                                             <Edit />
                                         </IconButton>
-                                        <IconButton onClick={() => handleDelete(reminder.id)}>
+                                        {reminder.status !== 'COMPLETED' && (
+                                            <IconButton 
+                                                onClick={() => handleStatusChange(reminder.id, 'COMPLETED')}
+                                                title="Als erledigt markieren"
+                                                color="success"
+                                            >
+                                                <CheckCircle />
+                                            </IconButton>
+                                        )}
+                                        {reminder.status === 'COMPLETED' && (
+                                            <IconButton 
+                                                onClick={() => handleStatusChange(reminder.id, 'PENDING')}
+                                                title="Als offen markieren"
+                                                color="warning"
+                                            >
+                                                <Schedule />
+                                            </IconButton>
+                                        )}
+                                        <IconButton onClick={() => handleDelete(reminder.id)} title="Löschen">
                                             <Delete />
                                         </IconButton>
                                     </TableCell>
@@ -114,7 +169,7 @@ const ReminderList = ({ onEdit, onDelete }) => {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={6} align="center">
+                                <TableCell colSpan={7} align="center">
                                     <Typography variant="body2" color="text.secondary">
                                         Keine Erinnerungen vorhanden
                                     </Typography>

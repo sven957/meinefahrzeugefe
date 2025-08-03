@@ -30,5 +30,27 @@ export const reminderService = {
     deleteReminder: async (id) => {
         const response = await axios.delete(`${API_BASE_URL}/${id}`);
         return response.data;
+    },
+
+    // Status einer Erinnerung aktualisieren
+    updateReminderStatus: async (id, status) => {
+        const response = await axios.put(`${API_BASE_URL}/${id}/status`, status, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        return response.data;
+    },
+
+    // Erinnerung als erledigt markieren
+    markAsCompleted: async (id) => {
+        const response = await axios.put(`${API_BASE_URL}/${id}/complete`);
+        return response.data;
+    },
+
+    // Erinnerung als offen markieren
+    markAsPending: async (id) => {
+        const response = await axios.put(`${API_BASE_URL}/${id}/pending`);
+        return response.data;
     }
 };
